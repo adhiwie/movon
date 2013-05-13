@@ -1,0 +1,118 @@
+<!DOCTYPE HTML>
+<HTML>
+<head>
+	<meta charset="UTF-8">
+	<title>Movon</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="css/jquery.mobile-1.2.0.min.css" />
+	<link rel="stylesheet" href="css/jquery.mobile.structure-1.2.0.min.css" />
+	<script src="js/jquery.min.js"></script>
+	<script src="js/jquery.mobile-1.2.0.min.js"></script>
+</head>
+<body> 
+
+<div data-role="page" id="home">
+
+	<div data-role="header">
+		<h1>Movon</h1>
+	</div><!-- /header -->
+
+	<div data-role="content">	
+		<center><h2>Box Office Movies</h2><center>
+        <ul data-role="listview" id="movie-data" data-inset="true">
+        </ul>		
+	</div><!-- /content -->
+
+	<div data-role="footer">		
+		<div data-role="navbar">
+			<ul>
+				<li><a href="index.html" class="ui-btn-active ui-state-persist">Box Office</a></li>
+				<li><a href="theater.html" data-ajax="false">In Theater</a></li>
+				<li><a href="upcoming.html" data-ajax="false">Upcoming</a></li>
+			</ul>
+		</div><!-- /navbar -->
+	</div><!-- /footer -->
+</div><!-- /page -->
+<div data-role="page" id="detail">
+    <div data-theme="a" data-role="header">
+        <h1 id="page-title">
+        </h1>
+        <a href="index.html" data-ajax="false" data-role="button" data-icon="arrow-l" data-iconpos="left">Back</a>
+    </div>
+
+    <div data-role="content">
+        <div id="movie-poster" style="text-align:center;"></div>
+        <ul data-role="listview" data-inset="true" id="movie-detail">
+
+        </ul>
+    </div>
+
+    <div data-theme="a" data-role="footer" data-position="fixed">
+
+    </div>
+</div>
+<script type="text/javascript">
+    $(document).on('pagebeforeshow', '#home', function(e, data){      
+	    $.ajax({url: "http://api.rottentomatoes.com/api/public/v1.0/lists/movies/box_office.json?limit=10&country=id&apikey=dvas6ugsttfwff24hzej9ctr",
+	        dataType: "jsonp",
+	        async: true,
+	        success: function (result) {
+	            ajax.parseJSONP(result);
+	        },
+	        error: function (request,error) {
+	            alert('Network error has occurred please try again!');
+	        }
+	    });
+
+	    $('#movie-data').on('click', 'li', function() {
+			var url_='http://api.rottentomatoes.com/api/public/v1.0/movies/'+ $(this).attr("data-name") +'.json?apikey=dvas6ugsttfwff24hzej9ctr';
+			$.ajax({url: url_,
+	            dataType: "jsonp",
+	            async: true,
+	            beforeSend: function() {
+	                $.mobile.loading('show');
+	            },
+	            complete: function() {
+	                $.mobile.loading('hide');
+	            },
+	            success: function (result) {
+	                ajax.jsonResult = result;
+	                $.mobile.changePage("#detail");
+	            },
+	            error: function (request,error) {
+	                alert('Network error has occurred please try again!');
+	            }
+	        });
+
+
+			$(document).on('pagebeforeshow', '#detail', function(e, data){       
+		    	ajax.parseJSONP(ajax.jsonResult);
+			});
+
+
+			var ajax = {
+			    parseJSONP:function(result){
+			    	$('#page-title').html(result.title);
+			    	$('#movie-poster').html('<img src="'+result.posters.profile+'" />');
+			    	$('#movie-detail').empty();
+			    	$('#movie-detail').append('<li>Critics Score:<span> ' +result.ratings.critics_score+ '%</span></li>');
+			    	$('#movie-detail').append('<li>Audience Score:<span> ' +result.ratings.audience_score+ '%</span></li>');
+			        $('#movie-detail').append('<li>Synopsis:<br/><span> ' +result.synopsis+ '</span></li>');		       	
+			        $('#movie-detail').listview('refresh');
+			    }
+			}
+		});       
+	});
+
+
+	var ajax = {  
+	    parseJSONP:function(result){
+	        $.each(result.movies, function(i, row) {
+	            $('#movie-data').append('<li data-name="'+row.id+'"><a href="#headline"><img src="'+ row.posters.thumbnail +'" class="ui-li-has-thumb"/><h3>'+row.title+'</h3><p>'+row.synopsis+'</p></a></li>');
+	        });
+	        $('#movie-data').listview('refresh');
+	    }
+	}
+</script>
+</body>
+</html>
